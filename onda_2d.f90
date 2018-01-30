@@ -54,8 +54,8 @@ do s=1,n_shots
         end if
     
 
-        do z=nstreamer_tail,nstreamer_head,nspacing
-            seismogram(k,z)=P(nreceptor_z,z)
+        do j=nstreamer_tail,nstreamer_head,nspacing
+            seismogram(k,j)=P(nreceptor_z,j)
         end do
         
     end do
@@ -83,11 +83,15 @@ do s=1,n_shots
 
     
     call save_image()
-    
-    nfx=nfx+nspacing
-    nstreamer_head=nstreamer_head+nspacing
-    nstreamer_tail=nstreamer_tail+nspacing
-
+    if (nstreamer_head > nstreamer_tail) then
+        nfx=nfx+nspacing
+        nstreamer_head=nstreamer_head+nspacing
+        nstreamer_tail=nstreamer_tail+nspacing
+    else
+        nfx=nfx-nspacing
+        nstreamer_head=nstreamer_head-nspacing
+        nstreamer_tail=nstreamer_tail-nspacing
+    end if
 end do
 
 call stacking()
@@ -473,12 +477,12 @@ end subroutine save_image
 subroutine stacking()
 implicit none
 
-do i=1,n_shots
-    write(image_char,"(i3)"), i
+do s=1,n_shots
+    write(image_char,"(i3)"), s
 
     open (38,file="image"//trim(adjustl(image_char))//".bin",access="direct",form="unformatted", &
     & recl=Nx*Nz)
-    read(38,rec=1) ((image(z,j),z=1,Nz),j=1,Nx)
+    read(38,rec=1) ((image(i,j),i=1,Nz),j=1,Nx)
     close(38)
 
     final_image=final_image+image

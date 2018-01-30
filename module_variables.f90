@@ -100,6 +100,9 @@ integer :: nspacing
 !Counter variables
 integer :: i,j,k,n,t,s 
 
+!Logical variables
+logical :: file_exists
+
 !Modelling constants
 integer :: comp_byte=4
 real :: pi=3.14159

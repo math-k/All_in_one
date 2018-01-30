@@ -158,41 +158,49 @@ end subroutine read_verify_velocity_model
 subroutine read_verify_density_model()
 implicit none
 
-do j=1, Nx
-    do i=1, Nz
-        if (nint(mod_vel(i,j)).EQ. 1524) then
-            mod_den(i,j)= 1000.0
-        else if (nint(mod_vel(i,j)).EQ. 1651) then
-            mod_den(i,j)= 2000.0
-        else if (nint(mod_vel(i,j)).EQ. 1943) then
-            mod_den(i,j)= 2100.0
-        else if (nint(mod_vel(i,j)).EQ. 2122) then
-            mod_den(i,j)= 2200.0
-        else if (nint(mod_vel(i,j)).EQ. 2492) then
-            mod_den(i,j)= 2350.0
-        else if (nint(mod_vel(i,j)).EQ. 2742) then
-            mod_den(i,j)= 2500.0
-        else if (nint(mod_vel(i,j)).EQ. 2918) then
-            mod_den(i,j)= 2550.0
-        else if (nint(mod_vel(i,j)).EQ. 2377) then
-            mod_den(i,j)= 2400.0
-        else if (nint(mod_vel(i,j)).EQ. 3179) then
-            mod_den(i,j)= 2650.0
-        else if (nint(mod_vel(i,j)).EQ. 2377) then
-            mod_den(i,j)= 2400.0
-        else if (nint(mod_vel(i,j)).EQ. 3407) then
-            mod_den(i,j)= 2250.0
-        else if (nint(mod_vel(i,j)).EQ. 3620) then
-            mod_den(i,j)= 2700.0
-        else if (nint(mod_vel(i,j)).EQ. 4511) then
-            mod_den(i,j)= 2950.0
-        end if
-    end do
-end do
+inquire(file=file_density_model, exist=file_exists)
 
-open(99,file=file_density_model,status="replace",access="direct",form="unformatted",recl=(Nx*Nz))
-write(99,rec=1) ((mod_den(i,j),i=1,Nz),j=1,Nx)
-close(99)
+if(file_exists) then
+    open(63,file=file_density_model,status="unknown",access="direct",form="unformatted",recl=(Nx*Nz))
+    read(63,rec=1) ((mod_den(i,j),i=1,Nz),j=1,Nx)
+    close(63)
+else  
+    do j=1, Nx
+        do i=1, Nz
+            if (nint(mod_vel(i,j)).EQ. 1524) then
+                mod_den(i,j)= 1000.0
+            else if (nint(mod_vel(i,j)).EQ. 1651) then
+                mod_den(i,j)= 2000.0
+            else if (nint(mod_vel(i,j)).EQ. 1943) then
+                mod_den(i,j)= 2100.0
+            else if (nint(mod_vel(i,j)).EQ. 2122) then
+                mod_den(i,j)= 2200.0
+            else if (nint(mod_vel(i,j)).EQ. 2492) then
+                mod_den(i,j)= 2350.0
+            else if (nint(mod_vel(i,j)).EQ. 2742) then
+                mod_den(i,j)= 2500.0
+            else if (nint(mod_vel(i,j)).EQ. 2918) then
+                mod_den(i,j)= 2550.0
+            else if (nint(mod_vel(i,j)).EQ. 2377) then
+                mod_den(i,j)= 2400.0
+            else if (nint(mod_vel(i,j)).EQ. 3179) then
+                mod_den(i,j)= 2650.0
+            else if (nint(mod_vel(i,j)).EQ. 2377) then
+                mod_den(i,j)= 2400.0
+            else if (nint(mod_vel(i,j)).EQ. 3407) then
+                mod_den(i,j)= 2250.0
+            else if (nint(mod_vel(i,j)).EQ. 3620) then
+                mod_den(i,j)= 2700.0
+            else if (nint(mod_vel(i,j)).EQ. 4511) then
+                mod_den(i,j)= 2950.0
+            end if
+        end do
+    end do
+    open(99,file=file_density_model,status="replace",access="direct",form="unformatted",recl=(Nx*Nz))
+    write(99,rec=1) ((mod_den(i,j),i=1,Nz),j=1,Nx)
+    close(99)
+end if
+
 
 open(61,file="density_model_verification.bin",status="replace",access="direct",form="unformatted",recl=(Nx*Nz))
 write(61,rec=1) ((mod_den(i,j),i=1,Nz),j=1,Nx)
@@ -269,6 +277,13 @@ open(42,file="b_model_verification.bin",status="replace",access="direct",form="u
 write(42,rec=1) ((b(i,j),i=1,Nz),j=1,Nx)
 close(42)
 
+open (51,file="cerjan_check.txt")
+do i=1,pontos_cerjan-1
+    vetor_cerjan(i)=exp(-((fator_cerjan*(pontos_cerjan-1-i))**2))
+    write(51,*) vetor_cerjan(i), i
+end do
+close(51)
+
 open(44,file="k_modulus_verification.bin",status="replace",access="direct",form="unformatted",recl=(Nx*Nz))
 write(44,rec=1) ((K_modulus(i,j),i=1,Nz),j=1,Nx)
 close(44)
@@ -336,17 +351,12 @@ end subroutine acoustic_fourth_order_staggered_grid_operator_loop
 subroutine anti_reflection_cerjan_conditions()
 implicit none
 
-open (51,file="cerjan_check.txt")
-do i=1,pontos_cerjan-1
-    vetor_cerjan(i)=exp(-((fator_cerjan*(pontos_cerjan-1-i))**2))
-    write(51,*) vetor_cerjan(i), i
-end do
-close(51)
-
 !Applying the cerjan conditions on the left region
 do j=1,pontos_cerjan-1
     do i=1,Nz
         P(i,j)=vetor_cerjan(j)*P(i,j)
+        U(i,j)=vetor_cerjan(j)*U(i,j)
+        V(i,j)=vetor_cerjan(j)*V(i,j)
     end do
 end do
 
@@ -356,7 +366,9 @@ n=pontos_cerjan
 do j=Nx-pontos_cerjan+2, Nx 
     n=n-1
     do i=1,Nz
-        P(i,j)=vetor_cerjan(j)*P(i,j)
+        P(i,j)=vetor_cerjan(n)*P(i,j)
+        U(i,j)=vetor_cerjan(n)*U(i,j)
+        V(i,j)=vetor_cerjan(n)*V(i,j)
     end do
 end do
 
@@ -367,6 +379,8 @@ do i=Nz-pontos_cerjan+2,Nz
     n=n-1
     do j=1,Nx
         P(i,j)=vetor_cerjan(n)*P(i,j)
+        U(i,j)=vetor_cerjan(n)*U(i,j)
+        V(i,j)=vetor_cerjan(n)*V(i,j)
     end do
 end do
 
